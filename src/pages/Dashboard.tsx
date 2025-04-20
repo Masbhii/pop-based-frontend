@@ -14,12 +14,15 @@ export const Dashboard = () => {
     setActiveProject,
     searchQuery,
     setSearchQuery,
-    searchProjects
+    searchProjects,
+    deleteMessage
   } = useApp();
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
-  const currentProject = projects.find(p => p.id === activeProject) || projects[0];
+  const [editProject, setEditProject] = useState<{ id: string; name: string; description: string } | null>(null);
+  const { updateProject, deleteProject } = useApp();
+  const currentProject = projects.length > 0 ? (projects.find(p => p.id === activeProject) || projects[0]) : null;
   const filteredProjects = searchQuery ? searchProjects(searchQuery) : projects;
   return <div className="max-w-7xl mx-auto">
       <div className="mb-8 flex justify-between items-center">
@@ -36,14 +39,51 @@ export const Dashboard = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {filteredProjects.map(project => <ProjectCard key={project.id} id={project.id} name={project.name} description={project.description} progress={project.progress} onClick={() => setActiveProject(project.id)} isActive={project.id === activeProject} />)}
+        {filteredProjects.length > 0 ? (
+          filteredProjects.map(project => <ProjectCard
+            key={project.id}
+            id={project.id}
+            name={project.name}
+            description={project.description}
+            progress={typeof project.progress === 'number' && !isNaN(project.progress) ? project.progress : 0}
+            onClick={() => setActiveProject(project.id)}
+            isActive={project.id === activeProject}
+            onEdit={proj => setEditProject(proj)}
+            onDelete={id => deleteProject(id)}
+          />)
+        ) : (
+          <div className="col-span-full text-center text-gray-400 py-8">No projects yet. Create your first project!</div>
+        )}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TaskList projectId={currentProject.id} tasks={currentProject.tasks} onNewTask={() => setIsNewTaskModalOpen(true)} />
-        <MessageBoard messages={currentProject.messages} onNewMessage={() => setIsNewMessageModalOpen(true)} />
+        {currentProject ? (
+          <>
+            <TaskList projectId={currentProject.id} tasks={Array.isArray(currentProject.tasks) ? currentProject.tasks : []} onNewTask={() => setIsNewTaskModalOpen(true)} />
+            <MessageBoard
+              messages={currentProject.messages}
+              onNewMessage={() => setIsNewMessageModalOpen(true)}
+              onDeleteMessage={messageId => deleteMessage(currentProject.id, messageId)}
+            />
+          </>
+        ) : (
+          <div className="col-span-full text-center text-gray-400 py-8">Select or create a project to see tasks and messages.</div>
+        )}
       </div>
       <NewProjectModal isOpen={isNewProjectModalOpen} onClose={() => setIsNewProjectModalOpen(false)} />
-      <NewTaskModal isOpen={isNewTaskModalOpen} onClose={() => setIsNewTaskModalOpen(false)} projectId={currentProject.id} />
-      <NewMessageModal isOpen={isNewMessageModalOpen} onClose={() => setIsNewMessageModalOpen(false)} projectId={currentProject.id} />
+      <NewProjectModal
+        isOpen={!!editProject}
+        onClose={() => setEditProject(null)}
+        initialProject={editProject ?? undefined}
+        onSave={proj => {
+          updateProject(proj);
+          setEditProject(null);
+        }}
+      />
+      {currentProject && (
+        <>
+          <NewTaskModal isOpen={isNewTaskModalOpen} onClose={() => setIsNewTaskModalOpen(false)} projectId={currentProject.id} />
+          <NewMessageModal isOpen={isNewMessageModalOpen} onClose={() => setIsNewMessageModalOpen(false)} projectId={currentProject.id} />
+        </>
+      )}
     </div>;
 };

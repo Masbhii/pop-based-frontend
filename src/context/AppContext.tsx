@@ -23,9 +23,10 @@ type Project = {
   messages: Message[];
 };
 type TeamMember = {
-  id: string;
+  id: number;
   name: string;
   role: string;
+  email: string;
   avatar: string;
 };
 type ScheduleEvent = {
@@ -33,7 +34,7 @@ type ScheduleEvent = {
   title: string;
   date: string;
   description: string;
-  attendees: string[];
+  attendees: number[];
 };
 // Context type
 type AppContextType = {
@@ -45,288 +46,354 @@ type AppContextType = {
   setActiveProject: (id: string) => void;
   toggleTaskCompletion: (projectId: string, taskId: string) => void;
   addProject: (name: string, description: string) => void;
+  updateProject: (project: { id: string; name: string; description: string }) => void;
+  deleteProject: (id: string) => void;
   addTask: (projectId: string, task: Omit<Task, 'id' | 'completed'>) => void;
   addMessage: (projectId: string, content: string, author: string) => void;
+  deleteMessage: (projectId: string, messageId: string) => void;
   setSearchQuery: (query: string) => void;
   searchProjects: (query: string) => Project[];
   addEvent: (event: Omit<ScheduleEvent, 'id'>) => void;
+  updateEvent: (event: ScheduleEvent) => void;
+  deleteEvent: (id: string) => void;
   addTeamMember: (member: Omit<TeamMember, 'id'>) => void;
+  deleteTeamMember: (id: number) => void;
+  deleteTask: (projectId: string, taskId: string) => void;
 };
-// Mock data
-const mockProjects: Project[] = [{
-  id: '1',
-  name: 'Website Redesign',
-  description: 'Overhaul the company website with new branding',
-  progress: 65,
-  tasks: [{
-    id: 't1',
-    title: 'Wireframe approval',
-    completed: true,
-    dueDate: '2023-10-15',
-    assignee: 'Alex Kim'
-  }, {
-    id: 't2',
-    title: 'Design homepage',
-    completed: true,
-    dueDate: '2023-10-22',
-    assignee: 'Sarah Johnson'
-  }, {
-    id: 't3',
-    title: 'Develop frontend components',
-    completed: false,
-    dueDate: '2023-11-05',
-    assignee: 'Miguel Rodriguez'
-  }, {
-    id: 't4',
-    title: 'Content migration',
-    completed: false,
-    dueDate: '2023-11-10',
-    assignee: 'Priya Patel'
-  }],
-  messages: [{
-    id: 'm1',
-    author: 'Sarah Johnson',
-    content: "I've uploaded the new homepage designs to the shared folder. Let me know what you think!",
-    date: '2023-10-20',
-    avatar: 'https://i.pravatar.cc/150?img=1'
-  }, {
-    id: 'm2',
-    author: 'Miguel Rodriguez',
-    content: "The designs look great! I'll start implementing them tomorrow.",
-    date: '2023-10-21',
-    avatar: 'https://i.pravatar.cc/150?img=2'
-  }]
-}, {
-  id: '2',
-  name: 'Q4 Marketing Campaign',
-  description: 'Plan and execute holiday marketing initiative',
-  progress: 30,
-  tasks: [{
-    id: 't5',
-    title: 'Market research',
-    completed: true,
-    dueDate: '2023-10-10',
-    assignee: 'James Wilson'
-  }, {
-    id: 't6',
-    title: 'Campaign strategy document',
-    completed: true,
-    dueDate: '2023-10-17',
-    assignee: 'Emma Davis'
-  }, {
-    id: 't7',
-    title: 'Creative asset production',
-    completed: false,
-    dueDate: '2023-11-01',
-    assignee: 'Olivia Martinez'
-  }, {
-    id: 't8',
-    title: 'Media buying',
-    completed: false,
-    dueDate: '2023-11-15',
-    assignee: 'Liam Thompson'
-  }],
-  messages: [{
-    id: 'm3',
-    author: 'Emma Davis',
-    content: "The strategy document is ready for review. I've highlighted areas where we need additional budget approval.",
-    date: '2023-10-17',
-    avatar: 'https://i.pravatar.cc/150?img=3'
-  }]
-}, {
-  id: '3',
-  name: 'Product Launch',
-  description: 'Prepare for the new feature launch in December',
-  progress: 15,
-  tasks: [{
-    id: 't9',
-    title: 'Finalize feature set',
-    completed: true,
-    dueDate: '2023-10-05',
-    assignee: 'Noah Chen'
-  }, {
-    id: 't10',
-    title: 'Beta testing plan',
-    completed: false,
-    dueDate: '2023-10-25',
-    assignee: 'Sophia Lee'
-  }, {
-    id: 't11',
-    title: 'Press release draft',
-    completed: false,
-    dueDate: '2023-11-10',
-    assignee: 'Ethan Wright'
-  }, {
-    id: 't12',
-    title: 'Launch event coordination',
-    completed: false,
-    dueDate: '2023-11-25',
-    assignee: 'Ava Garcia'
-  }],
-  messages: [{
-    id: 'm4',
-    author: 'Noah Chen',
-    content: 'Engineering has confirmed all planned features will be ready for the December release.',
-    date: '2023-10-08',
-    avatar: 'https://i.pravatar.cc/150?img=4'
-  }, {
-    id: 'm5',
-    author: 'Sophia Lee',
-    content: "I'm working on the beta testing plan. We'll need about 50 participants - should I reach out to our usual testers?",
-    date: '2023-10-22',
-    avatar: 'https://i.pravatar.cc/150?img=5'
-  }]
-}];
-// Mock team members
-const mockTeamMembers: TeamMember[] = [{
-  id: '1',
-  name: 'Alex Kim',
-  role: 'Product Designer',
-  avatar: 'https://i.pravatar.cc/150?img=1'
-}, {
-  id: '2',
-  name: 'Sarah Johnson',
-  role: 'Frontend Developer',
-  avatar: 'https://i.pravatar.cc/150?img=2'
-}, {
-  id: '3',
-  name: 'Miguel Rodriguez',
-  role: 'Backend Developer',
-  avatar: 'https://i.pravatar.cc/150?img=3'
-}];
-// Mock schedule events
-const mockScheduleEvents: ScheduleEvent[] = [{
-  id: '1',
-  title: 'Weekly Team Sync',
-  date: '2023-11-01T10:00:00',
-  description: 'Regular team sync meeting',
-  attendees: ['1', '2', '3']
-}, {
-  id: '2',
-  title: 'Project Review',
-  date: '2023-11-02T14:00:00',
-  description: 'Review website redesign progress',
-  attendees: ['1', '2']
-}];
+// Mock data removed for database integration.
+const mockProjects: Project[] = [];
+// Mock team members removed for database integration.
+const mockTeamMembers: TeamMember[] = [];
+// Mock schedule events removed for database integration.
+const mockScheduleEvents: ScheduleEvent[] = [];
 // Create the context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 // Provider component
 export const AppProvider: React.FC<{
   children: React.ReactNode;
-}> = ({
-  children
-}) => {
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [activeProject, setActiveProject] = useState<string>(mockProjects[0].id);
+}> = ({ children }) => {
+  // ...existing state and functions...
+
+  // Delete task function
+  const deleteTask = async (projectId: string, taskId: string) => {
+    try {
+      // Pastikan taskId dikirim sebagai number agar sesuai backend
+      const numericId = Number(taskId);
+      const res = await fetch(`http://localhost:3001/api/tasks/${numericId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete task');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal menghapus task.');
+      console.error(err);
+    }
+  };
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [activeProject, setActiveProject] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
-  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>(mockScheduleEvents);
-  const addProject = (name: string, description: string) => {
-    const newProject: Project = {
-      id: `p${projects.length + 1}`,
-      name,
-      description,
-      progress: 0,
-      tasks: [],
-      messages: []
-    };
-    setProjects([...projects, newProject]);
-  };
-  const addTask = (projectId: string, task: Omit<Task, 'id' | 'completed'>) => {
-    setProjects(projects.map(project => {
-      if (project.id === projectId) {
-        const newTask: Task = {
-          ...task,
-          id: `t${project.tasks.length + 1}`,
-          completed: false
-        };
-        return {
-          ...project,
-          tasks: [...project.tasks, newTask]
-        };
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  // Fetch data dari backend on mount
+  const fetchAllRef = React.useRef<() => Promise<void>>();
+  const fetchAll = async () => {
+      setLoading(true);
+      try {
+        // Fetch projects
+        const resProjects = await fetch('http://localhost:3001/api/projects');
+        const projectsData = await resProjects.json();
+        setProjects(projectsData.map((p: any) => ({
+          ...p,
+          tasks: Array.isArray(p.tasks) ? p.tasks : [],
+          messages: Array.isArray(p.messages) ? p.messages : []
+        })));
+        // Hanya set activeProject ke project pertama jika belum ada yang aktif
+        if (projectsData.length > 0 && (!activeProject || !projectsData.some((p: any) => p.id === activeProject))) {
+          setActiveProject(projectsData[0].id);
+        }
+        // Fetch team members
+        try {
+          const resTeam = await fetch('http://localhost:3001/api/team');
+          const teamData = await resTeam.json();
+          setTeamMembers(Array.isArray(teamData) ? teamData : []);
+        } catch (err) {
+          setTeamMembers([]);
+          console.error('Failed to fetch team members:', err);
+        }
+        // Fetch events
+        const resEvents = await fetch('http://localhost:3001/api/events');
+        const eventsData = await resEvents.json();
+        setScheduleEvents(Array.isArray(eventsData) ? eventsData.map(ev => ({ ...ev, attendees: ev.attendees || [] })) : []);
+      } catch (err) {
+        console.error('Failed to fetch initial data:', err);
+        setTeamMembers([]); // Patch: always fallback to array
+      } finally {
+        setLoading(false);
       }
-      return project;
-    }));
   };
-  const addMessage = (projectId: string, content: string, author: string) => {
-    setProjects(projects.map(project => {
-      if (project.id === projectId) {
-        const newMessage: Message = {
-          id: `m${project.messages.length + 1}`,
+  fetchAllRef.current = fetchAll;
+  React.useEffect(() => {
+    fetchAll();
+  }, []);
+
+  const addProject = async (name: string, description: string) => {
+    try {
+      const res = await fetch('http://localhost:3001/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description })
+      });
+      if (!res.ok) throw new Error('Failed to add project');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal menambah project.');
+      console.error(err);
+    }
+  };
+
+  const updateProject = async (project: { id: string; name: string; description: string }) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/projects/${project.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: project.name, description: project.description })
+      });
+      if (!res.ok) throw new Error('Failed to update project');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal mengedit project.');
+      console.error(err);
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/projects/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok && res.status !== 204) throw new Error('Failed to delete project');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal menghapus project.');
+      console.error(err);
+    }
+  };
+
+  const addTask = async (projectId: string, task: Omit<Task, 'id' | 'completed'>) => {
+    try {
+      const payload = {
+        projectId: Number(projectId),
+        title: task.title,
+        dueDate: task.dueDate || null,
+        assignee: task.assignee
+      };
+      console.log('[addTask] Sending payload:', payload);
+      const res = await fetch('http://localhost:3001/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errMsg = await res.text();
+        console.error('[addTask] Backend error:', errMsg);
+        throw new Error('Failed to add task');
+      }
+      const newTask = await res.json();
+      console.log('[addTask] Backend response:', newTask);
+      // Setelah menambah task, fetch ulang semua data project dari backend
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal menambah task ke database.');
+      console.error(err);
+    }
+  };
+  const addMessage = async (projectId: string, content: string, author: string) => {
+    try {
+      const avatar = teamMembers.find(member => member.name === author)?.avatar || 'https://i.pravatar.cc/150';
+      const res = await fetch('http://localhost:3001/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: Number(projectId),
           author,
           content,
-          date: new Date().toISOString(),
-          avatar: teamMembers.find(member => member.name === author)?.avatar || 'https://i.pravatar.cc/150'
-        };
-        return {
-          ...project,
-          messages: [...project.messages, newMessage]
-        };
+          avatar
+        })
+      });
+      if (!res.ok) {
+        const errMsg = await res.text();
+        console.error('Backend error:', errMsg);
+        throw new Error('Failed to add message');
       }
-      return project;
-    }));
+      const newMessage = await res.json();
+      setProjects(projects => projects.map(project => {
+        if (project.id === projectId) {
+          return { ...project, messages: [...project.messages, newMessage] };
+        }
+        return project;
+      }));
+    } catch (err) {
+      alert('Gagal menambah pesan ke database.');
+      console.error(err);
+    }
+  };
+
+  const deleteMessage = async (projectId: string, messageId: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/messages/${messageId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok && res.status !== 204) throw new Error('Failed to delete message');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal menghapus pesan.');
+      console.error(err);
+    }
   };
   const searchProjects = (query: string) => {
     if (!query) return projects;
     const lowercaseQuery = query.toLowerCase();
     return projects.filter(project => project.name.toLowerCase().includes(lowercaseQuery) || project.description.toLowerCase().includes(lowercaseQuery));
   };
-  const toggleTaskCompletion = (projectId: string, taskId: string) => {
-    setProjects(projects.map(project => {
-      if (project.id === projectId) {
-        const updatedTasks = project.tasks.map(task => {
-          if (task.id === taskId) {
-            return {
-              ...task,
-              completed: !task.completed
-            };
-          }
-          return task;
-        });
-        const completedTasks = updatedTasks.filter(task => task.completed).length;
-        const progress = Math.round(completedTasks / updatedTasks.length * 100);
-        return {
-          ...project,
-          tasks: updatedTasks,
-          progress
-        };
-      }
-      return project;
-    }));
+  const toggleTaskCompletion = async (projectId: string, taskId: string) => {
+    // Cari status terbaru dari task
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    const task = project.tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const newStatus = !task.completed;
+    try {
+      await fetch(`http://localhost:3001/api/tasks/${taskId}/toggle`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: newStatus })
+      });
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal update status task.');
+      console.error(err);
+    }
   };
-  const addEvent = (event: Omit<ScheduleEvent, 'id'>) => {
-    const newEvent: ScheduleEvent = {
-      ...event,
-      id: `e${scheduleEvents.length + 1}`
-    };
-    setScheduleEvents([...scheduleEvents, newEvent]);
+
+  const addEvent = async (event: { title: string; description: string; date: string; attendees?: number[] }) => {
+    try {
+      const res = await fetch('http://localhost:3001/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: event.title, description: event.description, date: event.date, attendees: event.attendees || [] })
+      });
+      if (!res.ok) throw new Error('Failed to add event');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal menambah event.');
+      console.error(err);
+    }
   };
-  const addTeamMember = (member: Omit<TeamMember, 'id'>) => {
-    const newMember: TeamMember = {
-      ...member,
-      id: `tm${teamMembers.length + 1}`
-    };
-    setTeamMembers([...teamMembers, newMember]);
+
+  const updateEvent = async (event: ScheduleEvent) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/events/${event.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          attendees: event.attendees || []
+        })
+      });
+      if (!res.ok) throw new Error('Failed to update event');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal mengedit event.');
+      console.error(err);
+    }
   };
-  return <AppContext.Provider value={{
-    projects,
-    activeProject,
-    searchQuery,
-    teamMembers,
-    scheduleEvents,
-    setActiveProject,
-    toggleTaskCompletion,
-    addProject,
-    addTask,
-    addMessage,
-    setSearchQuery,
-    searchProjects,
-    addEvent,
-    addTeamMember
-  }}>
+
+  const deleteEvent = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/events/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok && res.status !== 204) throw new Error('Failed to delete event');
+      if (fetchAllRef.current) await fetchAllRef.current();
+    } catch (err) {
+      alert('Gagal menghapus event.');
+      console.error(err);
+    }
+  };
+
+  const addTeamMember = async (member: Omit<TeamMember, 'id'>) => {
+    try {
+      const res = await fetch('http://localhost:3001/api/team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: member.name,
+          role: member.role,
+          email: member.email,
+          avatar: member.avatar,
+          job_desc: member.jobDesc || member.job_desc || ''
+        })
+      });
+      if (!res.ok) throw new Error('Failed to add team member');
+      const newMember = await res.json();
+      setTeamMembers(prev => [...prev, newMember]);
+    } catch (err) {
+      alert('Gagal menambah anggota tim.');
+      console.error(err);
+    }
+  };
+
+  // Fungsi hapus anggota tim
+  const deleteTeamMember = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/team/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok && res.status !== 204) throw new Error('Failed to delete team member');
+      setTeamMembers(prev => prev.filter(member => member.id !== id));
+    } catch (err) {
+      alert('Gagal menghapus anggota tim.');
+      console.error(err);
+    }
+  };
+
+
+
+  return (
+    <AppContext.Provider
+      value={{
+        projects,
+        activeProject,
+        searchQuery,
+        teamMembers,
+        scheduleEvents,
+        setActiveProject,
+        toggleTaskCompletion,
+        addProject,
+        updateProject,
+        deleteProject,
+        addTask,
+        addMessage,
+        setSearchQuery,
+        searchProjects,
+        addEvent,
+        updateEvent,
+        deleteEvent,
+        addTeamMember,
+        deleteTeamMember,
+        deleteTask,
+        deleteMessage
+      }}
+    >
       {children}
-    </AppContext.Provider>;
-};
+    </AppContext.Provider>
+  );
+}
+
 // Custom hook to use the context
 export const useApp = () => {
   const context = useContext(AppContext);

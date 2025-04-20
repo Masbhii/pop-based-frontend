@@ -18,7 +18,11 @@ export const Team = () => {
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {teamMembers.map(member => <TeamMemberCard key={member.id} member={member} projects={projects.filter(project => project.tasks.some(task => task.assignee === member.name))} />)}
+        {teamMembers.length > 0 ? (
+          teamMembers.map(member => <TeamMemberCard key={member.id} member={member} projects={projects} />)
+        ) : (
+          <div className="col-span-full text-center text-gray-400 py-8">No team members yet. Add your first team member!</div>
+        )}
       </div>
       <NewTeamMemberModal isOpen={isNewTeamMemberModalOpen} onClose={() => setIsNewTeamMemberModalOpen(false)} />
     </div>;

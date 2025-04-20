@@ -6,7 +6,8 @@ import { NewEventModal } from '../components/modals/NewEventModal';
 import { EventDetailsModal } from '../components/calendar/EventDetailsModal';
 export const Schedule = () => {
   const {
-    scheduleEvents
+    scheduleEvents,
+    teamMembers
   } = useApp();
   const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -18,8 +19,18 @@ export const Schedule = () => {
           <span>New Event</span>
         </button>
       </div>
-      <Calendar events={scheduleEvents} onEventClick={event => setSelectedEvent(event)} />
+      {scheduleEvents.length > 0 ? (
+        <Calendar events={scheduleEvents} onEventClick={event => setSelectedEvent(event)} />
+      ) : (
+        <div className="text-gray-400 text-center py-8">No events scheduled yet.</div>
+      )}
       <NewEventModal isOpen={isNewEventModalOpen} onClose={() => setIsNewEventModalOpen(false)} />
-      <EventDetailsModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      <EventDetailsModal 
+        event={selectedEvent} 
+        onClose={() => setSelectedEvent(null)} 
+        teamMembers={teamMembers}
+        onEdit={event => console.log('Edit event:', event)}
+        onDelete={event => console.log('Delete event:', event)}
+      />
     </div>;
 };

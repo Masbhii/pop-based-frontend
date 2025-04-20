@@ -11,10 +11,12 @@ export const Sidebar = () => {
   const location = useLocation();
   return <div className="w-64 bg-white border-r border-gray-200 shadow-sm min-h-screen flex flex-col">
       <div className="p-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">Cozy Projects</h1>
+        <Link to="/" className="text-xl font-bold text-blue-600 hover:underline focus:outline-none" title="Back to landing page">
+          Pop Based
+        </Link>
       </div>
       <div className="p-4">
-        <Link to="/" className="flex items-center mb-6 text-gray-700 hover:text-blue-600">
+        <Link to="/dashboard" className="flex items-center mb-6 text-gray-700 hover:text-blue-600">
           <HomeIcon size={18} className="mr-3" />
           <span>Home</span>
         </Link>
@@ -46,10 +48,14 @@ export const Sidebar = () => {
             Projects
           </h2>
           <div className="space-y-2">
-            {projects.map(project => <div key={project.id} onClick={() => setActiveProject(project.id)} className={`flex items-center rounded-md px-2 py-1.5 cursor-pointer ${activeProject === project.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+            {projects.length > 0 ? (
+              projects.map(project => <div key={project.id} onClick={() => setActiveProject(project.id)} className={`flex items-center rounded-md px-2 py-1.5 cursor-pointer ${activeProject === project.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}>
                 <FolderIcon size={16} className="mr-2" />
                 <span className="text-sm truncate">{project.name}</span>
-              </div>)}
+              </div>)
+            ) : (
+              <div className="text-gray-400 text-sm text-center py-4">No projects yet</div>
+            )}
           </div>
         </div>
       </div>

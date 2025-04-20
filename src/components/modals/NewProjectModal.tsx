@@ -4,22 +4,40 @@ import { useApp } from '../../context/AppContext';
 type NewProjectModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  initialProject?: { id: string; name: string; description: string };
+  onSave?: (project: { id: string; name: string; description: string }) => void;
 };
 export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  initialProject,
+  onSave
 }) => {
   const {
     addProject
   } = useApp();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState(initialProject ? initialProject.name : '');
+  const [description, setDescription] = useState(initialProject ? initialProject.description : '');
+  React.useEffect(() => {
+    if (initialProject) {
+      setName(initialProject.name);
+      setDescription(initialProject.description);
+    } else {
+      setName('');
+      setDescription('');
+    }
+  }, [initialProject, isOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim() && description.trim()) {
-      addProject(name.trim(), description.trim());
-      setName('');
-      setDescription('');
+      if (onSave && initialProject) {
+        onSave({ id: initialProject.id, name: name.trim(), description: description.trim() });
+      } else {
+        addProject(name.trim(), description.trim());
+        setName('');
+        setDescription('');
+      }
       onClose();
     }
   };
@@ -43,7 +61,7 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700">
-              Create Project
+              {initialProject ? 'Save Project' : 'Create Project'}
             </button>
           </div>
         </div>

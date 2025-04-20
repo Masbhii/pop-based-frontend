@@ -33,9 +33,14 @@ export const Calendar = ({
   const handleNextMonth = () => {
     setCurrentDate(addMonths(currentDate, 1));
   };
-  const years = Array.from({
-    length: 10
-  }, (_, i) => new Date().getFullYear() - 5 + i);
+  // Adjustable, real-time, scrollable years
+  const currentYear = new Date().getFullYear();
+  const [yearScrollStart, setYearScrollStart] = useState(currentYear - 5);
+  const years = Array.from({ length: 21 }, (_, i) => yearScrollStart + i);
+
+  const handleYearScroll = (dir: 'up' | 'down') => {
+    setYearScrollStart(prev => dir === 'up' ? prev - 10 : prev + 10);
+  }
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   return <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
       <div className="flex items-center justify-between mb-4">
@@ -69,13 +74,23 @@ export const Calendar = ({
             </div>
             <div className="space-y-2">
               <h4 className="font-medium text-gray-700">Year</h4>
-              <div className="grid grid-cols-2 gap-2">
-                {years.map(year => <button key={year} onClick={() => {
-              setCurrentDate(new Date(year, currentDate.getMonth()));
-              setIsMonthPickerOpen(false);
-            }} className={`px-3 py-1 text-sm rounded-md ${currentDate.getFullYear() === year ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}>
-                    {year}
-                  </button>)}
+              <div className="flex flex-col items-center">
+                <button onClick={() => handleYearScroll('up')} className="mb-1 px-2 py-0.5 text-xs rounded bg-gray-100 hover:bg-gray-200">▲</button>
+                <div className="overflow-y-auto max-h-48 w-32 border rounded grid grid-cols-2 gap-2 p-1">
+                  {years.map(year => (
+                    <button
+                      key={year}
+                      onClick={() => {
+                        setCurrentDate(new Date(year, currentDate.getMonth()));
+                        setIsMonthPickerOpen(false);
+                      }}
+                      className={`px-3 py-1 text-sm rounded-md ${currentDate.getFullYear() === year ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => handleYearScroll('down')} className="mt-1 px-2 py-0.5 text-xs rounded bg-gray-100 hover:bg-gray-200">▼</button>
               </div>
             </div>
           </div>

@@ -20,7 +20,8 @@ export const TaskList: React.FC<TaskListProps> = ({
   onNewTask
 }) => {
   const {
-    toggleTaskCompletion
+    toggleTaskCompletion,
+    deleteTask
   } = useApp();
   return <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -31,7 +32,14 @@ export const TaskList: React.FC<TaskListProps> = ({
         </button>
       </div>
       <div className="divide-y divide-gray-100">
-        {tasks.length > 0 ? tasks.map(task => <TaskItem key={task.id} task={task} onToggle={() => toggleTaskCompletion(projectId, task.id)} />) : <div className="p-4 text-center text-gray-500">No tasks yet</div>}
+        {tasks.length > 0 ? tasks.map(task => (
+  <TaskItem
+    key={task.id}
+    task={task}
+    onToggle={() => toggleTaskCompletion(projectId, task.id)}
+    onDelete={() => deleteTask(projectId, task.id)}
+  />
+)) : <div className="p-4 text-center text-gray-500">No tasks yet</div>}
       </div>
     </div>;
 };
